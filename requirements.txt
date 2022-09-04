@@ -1,4 +1,4 @@
-torch
-kaggle-environments
-numpy
-tqdm
+torch==1.12.1
+kaggle-environments==1.9.11
+numpy==1.23.2
+tqdm==4.64.0
