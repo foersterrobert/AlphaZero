@@ -12,7 +12,7 @@ np.random.seed(0)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-GAME = 'TicTacToe'
+GAME = 'ConnectFour'
 LOAD = False
 
 if __name__ == '__main__':
@@ -21,7 +21,7 @@ if __name__ == '__main__':
             'num_iterations': 254,            # number of highest level iterations
             'num_train_games': 5000,          # number of self-play games to play within each iteration
             'num_simulation_games': 600,      # number of mcts simulations when selecting a move within self-play
-            'num_epochs': 2,                  # number of epochs for training on self-play data for each iteration
+            'num_epochs': 4,                  # number of epochs for training on self-play data for each iteration
             'batch_size': 128,                # batch size for training
             'temperature': 1,                 # temperature for the softmax selection of moves
             'c_puct': 2,                      # the value of the constant policy
@@ -32,27 +32,27 @@ if __name__ == '__main__':
         model = ResNet(9, game).to(device)
         optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
         if LOAD:
-            model.load_state_dict(torch.load(f'Models/{game}/model_39.pt', map_location=device))
-            optimizer.load_state_dict(torch.load(f'Models/{game}/optimizer_39.pt', map_location=device))
+            model.load_state_dict(torch.load(f'Models/{game}/model.pt', map_location=device))
+            optimizer.load_state_dict(torch.load(f'Models/{game}/optimizer.pt', map_location=device))
 
     elif GAME == 'TicTacToe':
             args = {
-                'num_iterations': 254,            # number of highest level iterations
-                'num_train_games': 100,           # number of self-play games to play within each iteration
-                'num_simulation_games': 25,       # number of mcts simulations when selecting a move within self-play
-                'num_epochs': 2,                  # number of epochs for training on self-play data for each iteration
-                'batch_size': 128,                # batch size for training
+                'num_iterations': 8,              # number of highest level iterations
+                'num_train_games': 500,           # number of self-play games to play within each iteration
+                'num_simulation_games': 60,       # number of mcts simulations when selecting a move within self-play
+                'num_epochs': 4,                  # number of epochs for training on self-play data for each iteration
+                'batch_size': 64,                 # batch size for training
                 'temperature': 1,                 # temperature for the softmax selection of moves
                 'c_puct': 2,                      # the value of the constant policy
                 'augment': False,                 # whether to augment the training data with flipped states
             }
 
             game = TicTacToe()
-            model = ResNet(5, game).to(device)
+            model = ResNet(4, game).to(device)
             optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
             if LOAD:
-                model.load_state_dict(torch.load(f'Models/{game}/model_39.pt', map_location=device))
-                optimizer.load_state_dict(torch.load(f'Models/{game}/optimizer_39.pt', map_location=device))
+                model.load_state_dict(torch.load(f'Models/{game}/model.pt', map_location=device))
+                optimizer.load_state_dict(torch.load(f'Models/{game}/optimizer.pt', map_location=device))
 
     trainer = Trainer(model, optimizer, game, args)
     trainer.run()
