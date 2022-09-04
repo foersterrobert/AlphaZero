@@ -13,6 +13,7 @@ np.random.seed(0)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 GAME = 'TicTacToe'
+LOAD = False
 
 if __name__ == '__main__':
     if GAME == 'ConnectFour':
@@ -29,6 +30,8 @@ if __name__ == '__main__':
 
         game = ConnectFour()
         model = ResNet(9, game).to(device)
+        if LOAD:
+            model.load_state_dict(torch.load(f'Models/{game}/model_39.pt', map_location=device))
         optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
 
     elif GAME == 'TicTacToe':
@@ -45,6 +48,8 @@ if __name__ == '__main__':
 
             game = TicTacToe()
             model = ResNet(5, game).to(device)
+            if LOAD:
+                model.load_state_dict(torch.load(f'Models/{game}/model_39.pt', map_location=device))
             optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
 
     trainer = Trainer(model, optimizer, game, args)
