@@ -30,9 +30,10 @@ if __name__ == '__main__':
 
         game = ConnectFour()
         model = ResNet(9, game).to(device)
+        optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
         if LOAD:
             model.load_state_dict(torch.load(f'Models/{game}/model_39.pt', map_location=device))
-        optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
+            optimizer.load_state_dict(torch.load(f'Models/{game}/optimizer_39.pt', map_location=device))
 
     elif GAME == 'TicTacToe':
             args = {
@@ -48,9 +49,10 @@ if __name__ == '__main__':
 
             game = TicTacToe()
             model = ResNet(5, game).to(device)
+            optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
             if LOAD:
                 model.load_state_dict(torch.load(f'Models/{game}/model_39.pt', map_location=device))
-            optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
+                optimizer.load_state_dict(torch.load(f'Models/{game}/optimizer_39.pt', map_location=device))
 
     trainer = Trainer(model, optimizer, game, args)
     trainer.run()
