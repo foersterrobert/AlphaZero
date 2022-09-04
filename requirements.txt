@@ -1,0 +1,4 @@
+torch
+kaggle-environments
+numpy
+tqdm
