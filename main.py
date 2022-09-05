@@ -18,8 +18,8 @@ LOAD = False
 if __name__ == '__main__':
     if GAME == 'ConnectFour':
         args = {
-            'num_iterations': 254,            # number of highest level iterations
-            'num_train_games': 5000,          # number of self-play games to play within each iteration
+            'num_iterations': 48,             # number of highest level iterations
+            'num_train_games': 500,           # number of self-play games to play within each iteration
             'num_simulation_games': 600,      # number of mcts simulations when selecting a move within self-play
             'num_epochs': 4,                  # number of epochs for training on self-play data for each iteration
             'batch_size': 128,                # batch size for training
