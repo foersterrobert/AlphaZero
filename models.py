@@ -10,7 +10,8 @@ class ResNet(nn.Module):
         
         self.startBlock = nn.Sequential(
             nn.Conv2d(3, 128, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(128)
+            nn.BatchNorm2d(128),
+            nn.ReLU()
         )
         self.resBlocks = nn.ModuleList([ResBlock(128, 128) for _ in range(num_resBlocks)])
 
