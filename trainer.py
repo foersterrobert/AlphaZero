@@ -30,16 +30,15 @@ class Trainer:
             if self.args['augment']:
                 game_memory.append((self.game.get_augmented_state(root.state), player, np.flip(action_probs)))
 
-            visit_counts = [child.visit_count for child in root.children]
-            actions = [child.action_taken for child in root.children]
+            # sample action from the mcts policy | based on temperature
             if self.args['temperature'] == 0:
-                action = actions[np.argmax(visit_counts)]
+                action = np.argmax(action_probs)
             elif self.args['temperature'] == float('inf'):
-                action = np.random.choice(actions)
+                action = np.random.choice([r for r in range(self.game.action_size) if action_probs[r] > 0])
             else:
-                visit_count_distribution = np.array(visit_counts) ** (1 / self.args['temperature'])
-                visit_count_distribution = visit_count_distribution / sum(visit_count_distribution)
-                action = np.random.choice(actions, p=visit_count_distribution)
+                action_probs = action_probs ** (1 / self.args['temperature'])
+                action_probs /= np.sum(action_probs)
+                action = np.random.choice(len(action_probs), p=action_probs)
 
             state = self.game.drop_piece(state, action, player)
 
