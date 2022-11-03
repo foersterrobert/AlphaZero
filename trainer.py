@@ -36,9 +36,9 @@ class Trainer:
             elif self.args['temperature'] == float('inf'):
                 action = np.random.choice([r for r in range(self.game.action_size) if action_probs[r] > 0])
             else:
-                action_probs = action_probs ** (1 / self.args['temperature'])
-                action_probs /= np.sum(action_probs)
-                action = np.random.choice(len(action_probs), p=action_probs)
+                temperature_action_probs = action_probs ** (1 / self.args['temperature'])
+                temperature_action_probs /= np.sum(temperature_action_probs)
+                action = np.random.choice(len(temperature_action_probs), p=temperature_action_probs)
 
             state = self.game.drop_piece(state, action, player)
 
