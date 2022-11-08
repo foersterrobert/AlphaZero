@@ -79,8 +79,8 @@ class MCTS:
                 canonical_state = self.game.get_canonical_state(node.state, node.player)
                 action_probs, value = self.model.predict(canonical_state, augment=False)
                 valid_moves = self.game.get_valid_locations(node.state)
-                action_probs = action_probs * valid_moves
-                action_probs = action_probs / np.sum(action_probs)
+                action_probs *= valid_moves
+                action_probs /= np.sum(action_probs)
                 node.expand(action_probs)
             node.backpropagate(value)
 
