@@ -74,7 +74,7 @@ class ConnectFour:
     def check_terminal_and_value(self, state, action):
         if self.is_position_a_winner(state, action):
             return (True, 1)
-        if sum(self.get_valid_locations(state)) == 0:
+        if np.sum(self.get_valid_locations(state)) == 0:
             return (True, 0)
         return (False, 0)
     
@@ -99,10 +99,10 @@ class TicTacToe:
         mark = state[row][column]
         
         return (
-            sum(state[row]) == mark * self.column_count # row
-            or sum(state[:, column]) == mark * self.row_count # column 
-            or sum(np.diag(state)) == mark * self.row_count # diagonal 
-            or sum(np.diag(np.fliplr(state))) == mark * self.row_count # flipped diagonal
+            np.sum(state[row]) == mark * self.column_count # row
+            or np.sum(state[:, column]) == mark * self.row_count # column 
+            or np.sum(np.diag(state)) == mark * self.row_count # diagonal 
+            or np.sum(np.diag(np.fliplr(state))) == mark * self.row_count # flipped diagonal
         )
 
     def drop_piece(self, state, action, player):
@@ -134,6 +134,6 @@ class TicTacToe:
     def check_terminal_and_value(self, state, action):
         if self.is_position_a_winner(state, action):
             return (True, 1)
-        if sum(self.get_valid_locations(state)) == 0:
+        if np.sum(self.get_valid_locations(state)) == 0:
             return (True, 0)
         return (False, 0)
