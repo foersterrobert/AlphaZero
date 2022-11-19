@@ -118,10 +118,10 @@ class TicTacToe:
         return state * player
 
     def get_encoded_state(self, state):
-        encoded_state = np.vstack((
-            (state == -1).reshape(1, self.row_count, self.column_count),
-            (state == 0).reshape(1, self.row_count, self.column_count),
-            (state == 1).reshape(1, self.row_count, self.column_count)
+        encoded_state = np.stack((
+            (state == -1),
+            (state == 0),
+            (state == 1)
         )).astype(np.float32)
         return encoded_state
 
