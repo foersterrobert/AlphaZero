@@ -57,7 +57,7 @@ class ResNet(nn.Module):
             policy[0] = torch.flip(policy[0], dims=(0,))
         policy = policy.mean(0)
         value = value.mean(0)
-        return torch.softmax(policy, dim=0).data.cpu().numpy(), value.data.cpu().numpy()[0]
+        return torch.softmax(policy, dim=0).data.cpu().numpy(), value.item()
 
 class ResBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1):
