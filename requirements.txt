@@ -1,4 +1,4 @@
-torch==1.12.1
+torch==1.13
 kaggle-environments==1.9.11
 numpy==1.23.2
 tqdm==4.64.0
