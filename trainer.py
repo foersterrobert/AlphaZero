@@ -20,7 +20,7 @@ class Trainer:
         state = self.game.get_initial_state()
 
         while True:
-            root = self.mcts.search(self.game.get_canonical_state(state, player), 1)
+            root = self.mcts.search(self.game.get_canonical_state(state, player))
             action_probs = [0] * self.game.action_size
             for child in root.children:
                 action_probs[child.action_taken] = child.visit_count
