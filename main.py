@@ -28,6 +28,7 @@ if __name__ == '__main__':
             'c_puct': 2,                      # the value of the constant policy
             'augment': False,                 # whether to augment the training data with flipped states
             'dirichlet_alpha': 0.3,           # the value of the dirichlet noise
+            'dirichlet_epsilon': 0.25,        # the value of the dirichlet noise
         }
 
         game = ConnectFour()
@@ -48,6 +49,7 @@ if __name__ == '__main__':
                 'c_puct': 2,                      # the value of the constant policy
                 'augment': False,                 # whether to augment the training data with flipped states
                 'dirichlet_alpha': 0.3,           # the value of the dirichlet noise
+                'dirichlet_epsilon': 0.25,        # the value of the dirichlet noise
             }
 
             game = TicTacToe()

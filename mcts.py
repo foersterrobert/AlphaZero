@@ -67,7 +67,7 @@ class MCTS:
         root = Node(state, player=1, prior=0, game=self.game, args=self.args)
 
         action_probs, value = self.model.predict(state, 1)
-        action_probs = (1 - self.args['dirichlet_alpha']) * action_probs + np.random.dirichlet([self.args['dirichlet_alpha']] * self.game.action_size)   
+        action_probs = (1 - self.args['dirichlet_epsilon']) * action_probs + self.args['dirichlet_epsilon'] * np.random.dirichlet([self.args['dirichlet_alpha']] * self.game.action_size)   
         valid_moves = self.game.get_valid_locations(state)
         action_probs *= valid_moves
         action_probs /= np.sum(action_probs)
