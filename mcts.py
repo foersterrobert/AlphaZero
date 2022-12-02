@@ -63,8 +63,16 @@ class MCTS:
         self.game = game
         self.args = args
 
-    def search(self, state, player=1):
-        root = Node(state, player, prior=0, game=self.game, args=self.args)
+    def search(self, state):
+        root = Node(state, player=1, prior=0, game=self.game, args=self.args)
+
+        action_probs, value = self.model.predict(state, 1)
+        action_probs = (1 - self.args['dirichlet_alpha']) * action_probs + np.random.dirichlet([self.args['dirichlet_alpha']] * self.game.action_size)   
+        valid_moves = self.game.get_valid_locations(state)
+        action_probs *= valid_moves
+        action_probs /= np.sum(action_probs)
+
+        root.expand(action_probs)
 
         for simulation in range(self.args['num_simulation_games']):
             node = root

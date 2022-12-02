@@ -27,6 +27,7 @@ if __name__ == '__main__':
             'temperature': 1,                 # temperature for the softmax selection of moves
             'c_puct': 2,                      # the value of the constant policy
             'augment': False,                 # whether to augment the training data with flipped states
+            'dirichlet_alpha': 0.3,           # the value of the dirichlet noise
         }
 
         game = ConnectFour()
@@ -46,6 +47,7 @@ if __name__ == '__main__':
                 'temperature': 1,                 # temperature for the softmax selection of moves
                 'c_puct': 2,                      # the value of the constant policy
                 'augment': False,                 # whether to augment the training data with flipped states
+                'dirichlet_alpha': 0.3,           # the value of the dirichlet noise
             }
 
             game = TicTacToe()
