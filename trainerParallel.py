@@ -14,20 +14,19 @@ class Trainer:
         self.args = args
 
     @torch.no_grad()
-    def self_play(self, group_size=10):
-        self_play_games = [SelfPlayGame(self.game) for _ in range(group_size)]
+    def self_play(self):
+        self_play_games = [SelfPlayGame(self.game) for _ in range(self.args['group_size'])]
         self_play_memory = []
         player = 1
 
         while len(self_play_games) > 0:
-            del_list = []
-
             for game in self_play_games:
-                game.root = Node(self.game.get_canonical_state(game.state, player), 1, prior=0, game=self.game, args=self.args)
+                game.root = Node(self.game.get_canonical_state(game.state, player), prior=0, game=self.game, args=self.args)
 
             for simulation in range(self.args['num_simulation_games']):
                 for game in self_play_games:
                     game.encoded_state = None
+                    game.node = None
                     node = game.root
 
                     while node.is_expandable():
@@ -40,16 +39,14 @@ class Trainer:
                         node.backpropagate(value)
 
                     else:
-                        canonical_state = self.game.get_canonical_state(node.state, node.player)
-                        game.encoded_state = self.game.get_encoded_state(canonical_state)
+                        game.encoded_state = self.game.get_encoded_state(node.state)
                         game.node = node
 
                 self_play_games_predict = [game for game in self_play_games if game.encoded_state is not None]
                 if len(self_play_games_predict) > 0:
-                    predict_states = [game.encoded_state for game in self_play_games_predict]
-                    predict_states = np.stack(predict_states)
-
+                    predict_states = np.stack([game.encoded_state for game in self_play_games_predict])
                     predict_states = torch.tensor(predict_states, dtype=torch.float32, device=self.device)
+                    
                     action_probs, values = self.model(predict_states)
                     action_probs = torch.softmax(action_probs, dim=1)
                     action_probs = action_probs.cpu().numpy()
@@ -58,12 +55,13 @@ class Trainer:
                 for i, game in enumerate(self_play_games_predict):
                     action_probs_game, value_game = action_probs[i], values[i]
                     valid_moves = self.game.get_valid_locations(game.node.state)
-                    action_probs_game = action_probs_game * valid_moves
-                    action_probs_game = action_probs_game / np.sum(action_probs_game)
+                    action_probs_game *= valid_moves
+                    action_probs_game /= np.sum(action_probs_game)
                     game.node.expand(action_probs_game)
                     game.node.backpropagate(value_game)
 
-            for game in self_play_games:
+            for i in range(len(self_play_games) -1, -1, -1):
+                game = self_play_games[i]
                 action_probs = [0] * self.game.action_size
                 for child in game.root.children:
                     action_probs[child.action_taken] = child.visit_count
@@ -84,21 +82,16 @@ class Trainer:
 
                 is_terminal, reward = self.game.check_terminal_and_value(game.state, action)
                 if is_terminal:
-                    return_memory = []
                     for hist_state, hist_player, hist_action_probs in game.game_memory:
-                        return_memory.append((
+                        self_play_memory.append((
                             self.game.get_encoded_state(hist_state), hist_action_probs, reward * ((-1) ** (hist_player != player))
                         ))
                         if self.args['augment']:
-                            return_memory.append((
+                            self_play_memory.append((
                                 self.game.get_encoded_state(self.game.get_augmented_state(hist_state)), np.flip(hist_action_probs), reward * ((-1) ** (hist_player != player))
                             ))
-                    self_play_memory.extend(return_memory)
-                    del_list.append(game)
+                    del self_play_games[i]
 
-            for game in del_list:
-                self_play_games.remove(game)
-                
             player = self.game.get_opponent_player(player)
 
         return self_play_memory
@@ -128,7 +121,7 @@ class Trainer:
             memory = []
 
             self.model.eval()
-            for train_game in trange(self.args['num_train_games'], desc="train_game"):
+            for train_game in trange(self.args['num_train_games'] // self.args['group_size'], desc="train_game"):
                 memory += self.self_play()
 
             self.model.train()
@@ -140,7 +133,6 @@ class Trainer:
 
 class SelfPlayGame:
     def __init__(self, game):
-        self.game_memory = []
         self.state = game.get_initial_state()
         self.root = None
         self.node = None

@@ -4,8 +4,8 @@ import random
 import numpy as np
 from games import ConnectFour, TicTacToe
 from models import ResNet
-from trainer import Trainer
-# from trainerParallel import Trainer
+# from trainer import Trainer
+from trainerParallel import Trainer
 
 torch.manual_seed(0)
 random.seed(0)
@@ -22,6 +22,7 @@ if __name__ == '__main__':
         args = {
             'num_iterations': 48,             # number of highest level iterations
             'num_train_games': 500,           # number of self-play games to play within each iteration
+            'group_size': 100,                # number of games to play in parallel
             'num_simulation_games': 600,      # number of mcts simulations when selecting a move within self-play
             'num_epochs': 4,                  # number of epochs for training on self-play data for each iteration
             'batch_size': 128,                # batch size for training
@@ -43,6 +44,7 @@ if __name__ == '__main__':
             args = {
                 'num_iterations': 8,              # number of highest level iterations
                 'num_train_games': 500,           # number of self-play games to play within each iteration
+                'group_size': 100,                # number of games to play in parallel
                 'num_simulation_games': 60,       # number of mcts simulations when selecting a move within self-play
                 'num_epochs': 4,                  # number of epochs for training on self-play data for each iteration
                 'batch_size': 64,                 # batch size for training
