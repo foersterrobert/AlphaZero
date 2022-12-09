@@ -2,9 +2,8 @@ import numpy as np
 import math
 
 class Node:
-    def __init__(self, state, player, prior, game, args, parent=None, action_taken=None):
+    def __init__(self, state, prior, game, args, parent=None, action_taken=None):
         self.state = state
-        self.player = player
         self.children = []
         self.parent = parent
         self.total_value = 0
@@ -18,10 +17,10 @@ class Node:
         for a, prob in enumerate(action_probs):
             if prob != 0:
                 child_state = self.state.copy()
-                child_state = self.game.drop_piece(child_state, a, self.player)
+                child_state = self.game.drop_piece(child_state, a, player=1)
+                child_state = self.game.get_canonical_state(child_state, -1)
                 child = Node(
                     child_state,
-                    self.game.get_opponent_player(self.player),
                     prob,
                     self.game,
                     self.args,
@@ -64,7 +63,7 @@ class MCTS:
         self.args = args
 
     def search(self, state):
-        root = Node(state, player=1, prior=0, game=self.game, args=self.args)
+        root = Node(state, prior=0, game=self.game, args=self.args)
 
         action_probs, value = self.model.predict(state, augment=self.args['augment'])
         action_probs = (1 - self.args['dirichlet_epsilon']) * action_probs + self.args['dirichlet_epsilon'] * np.random.dirichlet([self.args['dirichlet_alpha']] * self.game.action_size)   
@@ -84,8 +83,7 @@ class MCTS:
             value = self.game.get_opponent_value(value) # value was based on enemy winning
 
             if not is_terminal:
-                canonical_state = self.game.get_canonical_state(node.state, node.player)
-                action_probs, value = self.model.predict(canonical_state, augment=False)
+                action_probs, value = self.model.predict(node.state, augment=False)
                 valid_moves = self.game.get_valid_locations(node.state)
                 action_probs *= valid_moves
                 action_probs /= np.sum(action_probs)
