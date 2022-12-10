@@ -117,13 +117,20 @@ class TicTacToe:
     def get_canonical_state(self, state, player):
         return state * player
 
-    def get_encoded_state(self, state):
-        encoded_state = np.stack((
-            (state == -1),
-            (state == 0),
-            (state == 1)
-        )).astype(np.float32)
-        return encoded_state
+    def get_encoded_state(self, observation):
+        if len(observation.shape) == 3:
+            encoded_observation = np.swapaxes(np.stack(
+                ((observation == -1), (observation == 0), (observation == 1))), 0, 1
+            ).astype(np.float32)
+
+        else:
+            encoded_observation = np.stack((
+                (observation == -1),
+                (observation == 0),
+                (observation == 1)
+            )).astype(np.float32)
+
+        return encoded_observation
 
     def get_opponent_value(self, score):
         return -1*score
