@@ -33,51 +33,52 @@ class Trainer:
                     canonical_states[i],
                     prior=0, game=self.game, args=self.args
                 )
-                self_play_game_valid_locations = self.game.get_valid_locations(self_play_game.root.state)
-                self_play_game_action_probs = action_probs[i]
-                self_play_game_action_probs = (1 - self.args['dirichlet_epsilon']) * self_play_game_action_probs + self.args['dirichlet_epsilon'] * np.random.dirichlet([self.args['dirichlet_alpha']] * self.game.action_size)
-                self_play_game_action_probs *= self_play_game_valid_locations
-                self_play_game_action_probs /= np.sum(self_play_game_action_probs)
 
-                self_play_game.root.expand(self_play_game_action_probs)
+                my_action_probs = action_probs[i]
+                my_action_probs = (1 - self.args['dirichlet_epsilon']) * my_action_probs + self.args['dirichlet_epsilon'] * np.random.dirichlet([self.args['dirichlet_alpha']] * self.game.action_size)
+                my_valid_locations = self.game.get_valid_locations(self_play_game.root.state)
+                my_action_probs *= my_valid_locations
+                my_action_probs /= np.sum(my_action_probs)
+
+                self_play_game.root.expand(my_action_probs)
 
             for simulation in range(self.args['num_simulation_games']):
                 for self_play_game in self_play_games:
-                    self_play_game.node = None
                     node = self_play_game.root
 
                     while node.is_expandable():
                         node = node.select_child()
 
-                    is_terminal, value = self.game.check_terminal_and_value(node.state, node.action_taken)
+                    self_play_game.is_terminal, value = self.game.check_terminal_and_value(node.state, node.action_taken)
                     value = self.game.get_opponent_value(value)
 
-                    if is_terminal:
+                    if self_play_game.is_terminal:
                         node.backpropagate(value)
 
                     else:
                         self_play_game.node = node
 
-                selected_self_play_games = [self_play_game for self_play_game in self_play_games if self_play_game.node is not None]
+                selected_self_play_games = [
+                    i for i in range(len(self_play_games)) if self_play_games[i].is_terminal == False 
+                ]
                 
                 if len(selected_self_play_games) > 0:
-                    states = np.stack([self_play_game.node.state for self_play_game in selected_self_play_games])
-                    canonical_states = self.game.get_canonical_state(states, player)
-                    encoded_states = self.game.get_encoded_state(canonical_states)
+                    states = np.stack([self_play_games[i].node.state for i in selected_self_play_games])
+                    encoded_states = self.game.get_encoded_state(states)
                     
                     encoded_states = torch.tensor(encoded_states, dtype=torch.float32, device=self.device)
                     action_probs, value = self.model(encoded_states)
                     action_probs = torch.softmax(action_probs, dim=1).cpu().numpy()
                     value = value.cpu().numpy()
 
-                for i, self_play_game in enumerate(selected_self_play_games):
-                    my_action_probs, my_value = action_probs[i], value[i]
-                    valid_moves = self.game.get_valid_locations(self_play_game.node.state)
+                for idx, i in enumerate(selected_self_play_games):
+                    my_action_probs, my_value = action_probs[idx], value[idx]
+                    valid_moves = self.game.get_valid_locations(self_play_games[i].node.state)
                     my_action_probs *= valid_moves
                     my_action_probs /= np.sum(my_action_probs)
 
-                    self_play_game.node.expand(my_action_probs)
-                    self_play_game.node.backpropagate(my_value)
+                    self_play_games[i].node.expand(my_action_probs)
+                    self_play_games[i].node.backpropagate(my_value)
 
             for i in range(len(self_play_games) -1, -1, -1):
                 self_play_game = self_play_games[i]

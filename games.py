@@ -54,13 +54,20 @@ class ConnectFour:
     def get_canonical_state(self, state, player):
         return state * player
 
-    def get_encoded_state(self, state):
-        encoded_state = np.vstack((
-            (state == -1).reshape(1, self.row_count, self.column_count),
-            (state == 0).reshape(1, self.row_count, self.column_count),
-            (state == 1).reshape(1, self.row_count, self.column_count)
-        )).astype(np.float32)
-        return encoded_state
+    def get_encoded_state(self, observation):
+        if len(observation.shape) == 3:
+            encoded_observation = np.swapaxes(np.stack(
+                ((observation == -1), (observation == 0), (observation == 1))), 0, 1
+            ).astype(np.float32)
+
+        else:
+            encoded_observation = np.stack((
+                (observation == -1),
+                (observation == 0),
+                (observation == 1)
+            )).astype(np.float32)
+
+        return encoded_observation
 
     def get_augmented_state(self, state):
         return np.flip(state, axis=1)
