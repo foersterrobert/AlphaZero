@@ -54,7 +54,7 @@ class Node:
         prior_score = self.args['c_puct'] * child.prior * math.sqrt(self.visit_count) / (1 + child.visit_count)
         if child.visit_count == 0:
             return prior_score
-        return prior_score - (child.total_value / child.visit_count)
+        return prior_score + self.game.get_opponent_value(child.total_value / child.visit_count)
 
 class MCTS:
     def __init__(self, model, game, args):
