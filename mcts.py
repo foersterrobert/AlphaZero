@@ -35,7 +35,7 @@ class Node:
         if self.parent is not None:
             self.parent.backpropagate(self.game.get_opponent_value(value))
 
-    def is_expandable(self):
+    def is_expanded(self):
         return len(self.children) > 0
 
     def select_child(self):
@@ -76,7 +76,7 @@ class MCTS:
         for simulation in range(self.args['num_simulation_games']):
             node = root
 
-            while node.is_expandable():
+            while node.is_expanded():
                 node = node.select_child()
 
             is_terminal, value = self.game.check_terminal_and_value(node.state, node.action_taken)

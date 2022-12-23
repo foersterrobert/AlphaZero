@@ -46,7 +46,7 @@ class Trainer:
                 for self_play_game in self_play_games:
                     node = self_play_game.root
 
-                    while node.is_expandable():
+                    while node.is_expanded():
                         node = node.select_child()
 
                     self_play_game.is_terminal, value = self.game.check_terminal_and_value(node.state, node.action_taken)
