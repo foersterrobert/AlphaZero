@@ -19,10 +19,10 @@ class KaggleAgent:
 
         if self.args['search']:
             root = self.mcts.search(state)
-
             policy = [0] * self.game.action_size
             for child in root.children:
                 policy[child.action_taken] = child.visit_count
+            policy /= np.sum(policy)
 
         else:
             policy, _ = self.model.predict(state, augment=self.args['augment'])
@@ -36,7 +36,7 @@ class KaggleAgent:
         elif self.args['temperature'] == float('inf'):
             action = np.random.choice([r for r in range(self.game.action_size) if policy[r] > 0])
         else:
-            policy = policy ** (1 / self.temperature)
+            policy = policy ** (1 / self.args['temperature'])
             policy /= np.sum(policy)
             action = np.random.choice(self.game.action_size, p=policy)
 
