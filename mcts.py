@@ -2,12 +2,12 @@ import numpy as np
 import math
 
 class Node:
-    def __init__(self, state, prior, game, args, parent=None, action_taken=None):
+    def __init__(self, state, prior, game, args, parent=None, action_taken=None, visit_count=0):
         self.state = state
         self.children = []
         self.parent = parent
         self.total_value = 0
-        self.visit_count = 0
+        self.visit_count = visit_count
         self.prior = prior
         self.action_taken = action_taken
         self.game = game
@@ -63,7 +63,7 @@ class MCTS:
         self.args = args
 
     def search(self, state):
-        root = Node(state, prior=0, game=self.game, args=self.args)
+        root = Node(state, prior=0, game=self.game, args=self.args, visit_count=1)
 
         action_probs, value = self.model.predict(state, augment=self.args['augment'])
         action_probs = (1 - self.args['dirichlet_epsilon']) * action_probs + self.args['dirichlet_epsilon'] * np.random.dirichlet([self.args['dirichlet_alpha']] * self.game.action_size)   
