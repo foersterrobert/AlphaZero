@@ -27,6 +27,7 @@ class Trainer:
             encoded_states = torch.tensor(encoded_states, dtype=torch.float32, device=self.device)
             action_probs, value = self.model(encoded_states)
             action_probs = torch.softmax(action_probs, dim=1).cpu().numpy()
+            action_probs = (1 - self.args['dirichlet_epsilon']) * action_probs + self.args['dirichlet_epsilon'] * np.random.dirichlet([self.args['dirichlet_alpha']] * self.game.action_size, size=action_probs.shape[0])
 
             for i, self_play_game in enumerate(self_play_games):
                 self_play_game.root = Node(
@@ -35,7 +36,6 @@ class Trainer:
                 )
 
                 my_action_probs = action_probs[i]
-                my_action_probs = (1 - self.args['dirichlet_epsilon']) * my_action_probs + self.args['dirichlet_epsilon'] * np.random.dirichlet([self.args['dirichlet_alpha']] * self.game.action_size)
                 my_valid_locations = self.game.get_valid_locations(self_play_game.root.state)
                 my_action_probs *= my_valid_locations
                 my_action_probs /= np.sum(my_action_probs)
