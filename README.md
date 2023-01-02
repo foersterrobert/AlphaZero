@@ -9,7 +9,8 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Alternatively you can also use the pretrained models in the [Models](https://github.com/foersterrobert/AlphaZero/tree/master/Models) folder and test them in [test.ipynb](https://github.com/foersterrobert/AlphaZero/blob/master/test.ipynb).
+Alternatively you can also use the pretrained models in the [Models](https://github.com/foersterrobert/AlphaZero/tree/master/Models) folder and test them in [test.ipynb](https://github.com/foersterrobert/AlphaZero/blob/master/test.ipynb)
+(set num_iterations to 0 to visualize the board).
 
 ![tictactoe](https://raw.githubusercontent.com/foersterrobert/AlphaZero/master/assets/tictactoe.gif)
 ![connectfour](https://raw.githubusercontent.com/foersterrobert/AlphaZero/master/assets/connectfour.gif)
