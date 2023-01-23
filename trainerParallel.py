@@ -32,7 +32,8 @@ class Trainer:
             for i, self_play_game in enumerate(self_play_games):
                 self_play_game.root = Node(
                     canonical_states[i],
-                    prior=0, game=self.game, args=self.args
+                    prior=0, game=self.game, args=self.args,
+                    visit_count=1
                 )
 
                 my_action_probs = action_probs[i]
