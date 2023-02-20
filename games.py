@@ -6,21 +6,29 @@ class ConnectFour:
         self.column_count = 7
         self.action_size = self.column_count
         self.in_a_row = 4
-
+        
     def __repr__(self):
-        return 'ConnectFour'
-
+        return "ConnectFour"
+        
     def get_initial_state(self):
-        return np.zeros((self.row_count, self.column_count), dtype=np.int8)
-
-    def is_position_a_winner(self, state, action):
-        if action is None:
+        return np.zeros((self.row_count, self.column_count))
+    
+    def get_next_state(self, state, action, player):
+        row = np.max(np.where(state[:, action] == 0))
+        state[row, action] = player
+        return state
+    
+    def get_valid_moves(self, state):
+        return (state[0] == 0).astype(np.uint8)
+    
+    def check_win(self, state, action):
+        if action == None:
             return False
-            
-        # row = np.argmax(state[:, action] != 0)
-        row = min([r for r in range(self.row_count) if state[r][action] != 0])
-        mark = state[row][action]
-            
+        
+        row = np.min(np.where(state[:, action] != 0))
+        column = action
+        player = state[row][column]
+
         def count(offset_row, offset_column):
             for i in range(1, self.in_a_row):
                 r = row + offset_row * i
@@ -30,7 +38,7 @@ class ConnectFour:
                     or r >= self.row_count
                     or c < 0 
                     or c >= self.column_count
-                    or state[r][c] != mark
+                    or state[r][c] != player
                 ):
                     return i - 1
             return self.in_a_row - 1
@@ -42,112 +50,90 @@ class ConnectFour:
             or (count(1, -1) + count(-1, 1)) >= self.in_a_row - 1 # top right diagonal
         )
     
-    def drop_piece(self, state, action, player):
-        # row = np.argmax(state[:, 0] != 0) - 1
-        row = max([r for r in range(self.row_count) if state[r][action] == 0])
-        state[row][action] = player
-        return state
-
-    def get_valid_locations(self, state):
-        return (state[0] == 0).astype(np.uint8)
-
-    def get_canonical_state(self, state, player):
+    def get_value_and_terminated(self, state, action):
+        if self.check_win(state, action):
+            return 1, True
+        if np.sum(self.get_valid_moves(state)) == 0:
+            return 0, True
+        return 0, False
+    
+    def get_opponent(self, player):
+        return -player
+    
+    def get_opponent_value(self, value):
+        return -value
+    
+    def change_perspective(self, state, player):
         return state * player
-
-    def get_encoded_state(self, observation):
-        if len(observation.shape) == 3:
-            encoded_observation = np.swapaxes(np.stack(
-                ((observation == -1), (observation == 0), (observation == 1))), 0, 1
-            ).astype(np.float32)
-
-        else:
-            encoded_observation = np.stack((
-                (observation == -1),
-                (observation == 0),
-                (observation == 1)
-            )).astype(np.float32)
-
-        return encoded_observation
-
-    def get_augmented_state(self, state):
-        return np.flip(state, axis=1)
-
-    def get_opponent_value(self, score):
-        return -1*score
-
-    def get_opponent_player(self, player):
-        return -1*player
-
-    def check_terminal_and_value(self, state, action):
-        if self.is_position_a_winner(state, action):
-            return (True, 1)
-        if np.sum(self.get_valid_locations(state)) == 0:
-            return (True, 0)
-        return (False, 0)
+    
+    def get_encoded_state(self, state):
+        encoded_state = np.stack(
+            (state == -1, state == 0, state == 1)
+        ).astype(np.float32)
+        
+        if len(state.shape) == 3:
+            encoded_state = np.swapaxes(encoded_state, 0, 1)
+        
+        return encoded_state
     
 class TicTacToe:
     def __init__(self):
         self.row_count = 3
         self.column_count = 3
-        self.action_size = 9
-
+        self.action_size = self.row_count * self.column_count
+        
     def __repr__(self):
-        return 'TicTacToe'
-
+        return "TicTacToe"
+        
     def get_initial_state(self):
-        return np.zeros((self.row_count, self.column_count), dtype=np.int8)
-
-    def is_position_a_winner(self, state, action):
-        if action is None:
-            return False
-
+        return np.zeros((self.row_count, self.column_count))
+    
+    def get_next_state(self, state, action, player):
         row = action // self.column_count
         column = action % self.column_count
-        mark = state[row][column]
+        state[row, column] = player
+        return state
+    
+    def get_valid_moves(self, state):
+        return (state.reshape(-1) == 0).astype(np.uint8)
+    
+    def check_win(self, state, action):
+        if action == None:
+            return False
+        
+        row = action // self.column_count
+        column = action % self.column_count
+        player = state[row, column]
         
         return (
-            np.sum(state[row]) == mark * self.column_count # row
-            or np.sum(state[:, column]) == mark * self.row_count # column 
-            or np.sum(np.diag(state)) == mark * self.row_count # diagonal 
-            or np.sum(np.diag(np.fliplr(state))) == mark * self.row_count # flipped diagonal
+            np.sum(state[row, :]) == player * self.column_count
+            or np.sum(state[:, column]) == player * self.row_count
+            or np.sum(np.diag(state)) == player * self.row_count
+            or np.sum(np.diag(np.flip(state, axis=0))) == player * self.row_count
         )
-
-    def drop_piece(self, state, action, player):
-        row = action // self.column_count
-        column = action % self.column_count
-        state[row][column] = player
-        return state
-
-    def get_valid_locations(self, state):
-        return (state.reshape(-1) == 0).astype(np.uint8)
-
-    def get_canonical_state(self, state, player):
+    
+    def get_value_and_terminated(self, state, action):
+        if self.check_win(state, action):
+            return 1, True
+        if np.sum(self.get_valid_moves(state)) == 0:
+            return 0, True
+        return 0, False
+    
+    def get_opponent(self, player):
+        return -player
+    
+    def get_opponent_value(self, value):
+        return -value
+    
+    def change_perspective(self, state, player):
         return state * player
-
-    def get_encoded_state(self, observation):
-        if len(observation.shape) == 3:
-            encoded_observation = np.swapaxes(np.stack(
-                ((observation == -1), (observation == 0), (observation == 1))), 0, 1
-            ).astype(np.float32)
-
-        else:
-            encoded_observation = np.stack((
-                (observation == -1),
-                (observation == 0),
-                (observation == 1)
-            )).astype(np.float32)
-
-        return encoded_observation
-
-    def get_opponent_value(self, score):
-        return -1*score
-
-    def get_opponent_player(self, player):
-        return -1*player
-
-    def check_terminal_and_value(self, state, action):
-        if self.is_position_a_winner(state, action):
-            return (True, 1)
-        if np.sum(self.get_valid_locations(state)) == 0:
-            return (True, 0)
-        return (False, 0)
+    
+    def get_encoded_state(self, state):
+        encoded_state = np.stack(
+            (state == -1, state == 0, state == 1)
+        ).astype(np.float32)
+        
+        if len(state.shape) == 3:
+            encoded_state = np.swapaxes(encoded_state, 0, 1)
+        
+        return encoded_state

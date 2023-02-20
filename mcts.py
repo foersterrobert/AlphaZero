@@ -1,93 +1,109 @@
 import numpy as np
 import math
+import torch
 
 class Node:
-    def __init__(self, state, prior, game, args, parent=None, action_taken=None, visit_count=0):
-        self.state = state
-        self.children = []
-        self.parent = parent
-        self.total_value = 0
-        self.visit_count = visit_count
-        self.prior = prior
-        self.action_taken = action_taken
+    def __init__(self, game, args, state, parent=None, action_taken=None, prior=0, visit_count=0):
         self.game = game
         self.args = args
-
-    def expand(self, action_probs):
-        for a, prob in enumerate(action_probs):
-            if prob != 0:
-                child_state = self.state.copy()
-                child_state = self.game.drop_piece(child_state, a, player=1)
-                child_state = self.game.get_canonical_state(child_state, -1)
-                child = Node(
-                    child_state,
-                    prob,
-                    self.game,
-                    self.args,
-                    parent=self,
-                    action_taken=a,
-                )
-                self.children.append(child)
-
-    def backpropagate(self, value):
-        self.total_value += value
-        self.visit_count += 1
-        if self.parent is not None:
-            self.parent.backpropagate(self.game.get_opponent_value(value))
-
-    def is_expanded(self):
+        self.state = state
+        self.parent = parent
+        self.action_taken = action_taken
+        self.prior = prior
+        self.children = []
+        
+        self.visit_count = visit_count
+        self.value_sum = 0
+        
+    def is_fully_expanded(self):
         return len(self.children) > 0
-
-    def select_child(self):
-        best_score = -np.inf
+    
+    def select(self):
         best_child = None
-
+        best_ucb = -np.inf
+        
         for child in self.children:
-            ucb_score = self.get_ucb_score(child)
-            if ucb_score > best_score:
-                best_score = ucb_score
+            ucb = self.get_ucb(child)
+            if ucb > best_ucb:
                 best_child = child
-
+                best_ucb = ucb
+                
         return best_child
-
-    def get_ucb_score(self, child):
-        prior_score = self.args['c_puct'] * child.prior * math.sqrt(self.visit_count) / (1 + child.visit_count)
+    
+    def get_ucb(self, child):
         if child.visit_count == 0:
-            return prior_score
-        return prior_score + self.game.get_opponent_value(child.total_value / child.visit_count)
+            q_value = 0
+        else:
+            q_value = 1 - ((child.value_sum / child.visit_count) + 1) / 2
+        return q_value + self.args['C'] * (math.sqrt(self.visit_count) / (child.visit_count + 1)) * child.prior
+    
+    def expand(self, policy):
+        for action, prob in enumerate(policy):
+            if prob > 0:
+                child_state = self.state.copy()
+                child_state = self.game.get_next_state(child_state, action, 1)
+                child_state = self.game.change_perspective(child_state, player=-1)
+
+                child = Node(self.game, self.args, child_state, self, action, prob)
+                self.children.append(child)
+            
+    def backpropagate(self, value):
+        self.value_sum += value
+        self.visit_count += 1
+        
+        value = self.game.get_opponent_value(value)
+        if self.parent is not None:
+            self.parent.backpropagate(value)  
 
 class MCTS:
     def __init__(self, model, game, args):
         self.model = model
         self.game = game
         self.args = args
-
+        
+    @torch.no_grad()
     def search(self, state):
-        root = Node(state, prior=0, game=self.game, args=self.args, visit_count=1)
-
-        action_probs, _ = self.model.predict(state, augment=self.args['augment'])
-        action_probs = (1 - self.args['dirichlet_epsilon']) * action_probs + self.args['dirichlet_epsilon'] * np.random.dirichlet([self.args['dirichlet_alpha']] * self.game.action_size)   
-        valid_moves = self.game.get_valid_locations(state)
-        action_probs *= valid_moves
-        action_probs /= np.sum(action_probs)
-
-        root.expand(action_probs)
-
-        for simulation in range(self.args['num_simulation_games']):
+        root = Node(self.game, self.args, state, visit_count=1)
+        
+        policy, _ = self.model(
+            torch.tensor(self.game.get_encoded_state(state), device=self.model.device).unsqueeze(0)
+        )
+        policy = torch.softmax(policy, axis=1).squeeze(0).cpu().numpy()
+        policy = (1 - self.args['dirichlet_epsilon']) * policy + self.args['dirichlet_epsilon'] \
+            * np.random.dirichlet([self.args['dirichlet_alpha']] * self.game.action_size)
+        
+        valid_moves = self.game.get_valid_moves(state)
+        policy *= valid_moves
+        policy /= np.sum(policy)
+        root.expand(policy)
+        
+        for search in range(self.args['num_mcts_searches']):
             node = root
-
-            while node.is_expanded():
-                node = node.select_child()
-
-            is_terminal, value = self.game.check_terminal_and_value(node.state, node.action_taken)
-            value = self.game.get_opponent_value(value) # value was based on enemy winning
-
+            
+            while node.is_fully_expanded():
+                node = node.select()
+                
+            value, is_terminal = self.game.get_value_and_terminated(node.state, node.action_taken)
+            value = self.game.get_opponent_value(value)
+            
             if not is_terminal:
-                action_probs, value = self.model.predict(node.state, augment=False)
-                valid_moves = self.game.get_valid_locations(node.state)
-                action_probs *= valid_moves
-                action_probs /= np.sum(action_probs)
-                node.expand(action_probs)
-            node.backpropagate(value)
-
-        return root
+                policy, value = self.model(
+                    torch.tensor(self.game.get_encoded_state(node.state), device=self.model.device).unsqueeze(0)
+                )
+                policy = torch.softmax(policy, axis=1).squeeze(0).cpu().numpy()
+                valid_moves = self.game.get_valid_moves(node.state)
+                policy *= valid_moves
+                policy /= np.sum(policy)
+                
+                value = value.item()
+                
+                node.expand(policy)
+                
+            node.backpropagate(value)    
+            
+        action_probs = np.zeros(self.game.action_size)
+        for child in root.children:
+            action_probs[child.action_taken] = child.visit_count
+        action_probs /= np.sum(action_probs)
+        return action_probs
+        
