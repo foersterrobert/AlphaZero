@@ -48,7 +48,7 @@ class AlphaZero:
     def train(self, memory):
         random.shuffle(memory)
         for batchIdx in range(0, len(memory), self.args['batch_size']):
-            sample = memory[batchIdx:min(len(memory) - 1, batchIdx + self.args['batch_size'])]
+            sample = memory[batchIdx:batchIdx+self.args['batch_size']]
             state, policy_targets, value_targets = zip(*sample)
             
             state, policy_targets, value_targets = np.array(state), np.array(policy_targets), np.array(value_targets).reshape(-1, 1)
