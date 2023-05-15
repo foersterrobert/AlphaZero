@@ -20,16 +20,16 @@ class MCTSParallel:
         policy *= valid_moves
         policy /= np.sum(policy, axis=1, keepdims=True)
         
-        for i, spg in enumerate(spGames):
-            spg.root = Node(self.game, self.args, states[i], visit_count=1)
-            spg.root.expand(policy[i])
+        for i, g in enumerate(spGames):
+            g.root = Node(self.game, self.args, states[i], visit_count=1)
+            g.root.expand(policy[i])
         
         for search in range(self.args['num_mcts_searches']):
-            for spg in spGames:
-                spg.node = None
-                node = spg.root
+            for g in spGames:
+                g.node = None
+                node = g.root
 
-                while node.is_fully_expanded():
+                while node.is_expanded():
                     node = node.select()
 
                 value, is_terminal = self.game.get_value_and_terminated(node.state, node.action_taken)
@@ -39,7 +39,7 @@ class MCTSParallel:
                     node.backpropagate(value)
                     
                 else:
-                    spg.node = node
+                    g.node = node
                     
             expandable_spGames = [mappingIdx for mappingIdx in range(len(spGames)) if spGames[mappingIdx].node is not None]
                     

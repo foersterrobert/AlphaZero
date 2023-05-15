@@ -15,7 +15,7 @@ class Node:
         self.visit_count = visit_count
         self.value_sum = 0
         
-    def is_fully_expanded(self):
+    def is_expanded(self):
         return len(self.children) > 0
     
     def select(self):
@@ -80,7 +80,7 @@ class MCTS:
         for search in range(self.args['num_mcts_searches']):
             node = root
             
-            while node.is_fully_expanded():
+            while node.is_expanded():
                 node = node.select()
                 
             value, is_terminal = self.game.get_value_and_terminated(node.state, node.action_taken)
