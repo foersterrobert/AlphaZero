@@ -19,6 +19,8 @@ class ConnectFour:
         return state
     
     def get_valid_moves(self, state):
+        if len(state.shape) == 3:
+            return (state[:, 0] == 0).astype(np.uint8)
         return (state[0] == 0).astype(np.uint8)
     
     def check_win(self, state, action):
@@ -95,7 +97,9 @@ class TicTacToe:
         return state
     
     def get_valid_moves(self, state):
-        return (state.reshape(-1) == 0).astype(np.uint8)
+        if len(state.shape) == 3:
+            return (state.reshape(-1, 9) == 0).astype(np.uint8)
+        return (state.reshape(9) == 0).astype(np.uint8)
     
     def check_win(self, state, action):
         if action == None:
