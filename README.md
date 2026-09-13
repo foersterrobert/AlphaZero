@@ -1,8 +1,10 @@
+
+
 Flexible and intuitive build of [AlphaZero](https://www.deepmind.com/blog/alphazero-shedding-new-light-on-chess-shogi-and-go).
 
 Currently works out of the box for both ConnectFour and TicTacToe.
 
-Use [main.py](https://github.com/foersterrobert/AlphaZero/blob/master/main.py) for training your own models.
+Use [main.py](https://github.com/foersterrobert/AlphaZero/blob/master/main.py) for training your own models (set `GAME` to `'ConnectFour'` or `'TicTacToe'`).
 
 ```python
 pip install -r requirements.txt
